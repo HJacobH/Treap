@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using Microsoft.Win32;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -57,13 +59,16 @@ namespace Treap
 
             if (int.TryParse(TxtSpotNumber.Text, out int spotNumber))
             {
-                var data = new VehicleData(TxtVehicleData.Text, "Neznámý");
+                string spz = string.IsNullOrWhiteSpace(TxtLicensePlate.Text) ? "Neznámá SPZ" : TxtLicensePlate.Text;
+                string owner = string.IsNullOrWhiteSpace(TxtOwnerName.Text) ? "Neznámý majitel" : TxtOwnerName.Text;
+
+                var data = new VehicleData(spz, owner);
 
                 bool success = _garage.OccupySpot(floor, spotNumber, data);
 
                 if (success)
                 {
-                    LogMessage($"ÚSPĚCH: Podlaží {floor + 1}, místo {spotNumber} bylo obsazeno.");
+                    LogMessage($"ÚSPĚCH: Podlaží {floor + 1}, místo {spotNumber} obsazeno ({spz}).");
                     RefreshOccupiedList();
                     UpdateTreeVisualization();
                 }
@@ -161,15 +166,48 @@ namespace Treap
 
         private void BtnLoadFile_Click(object sender, RoutedEventArgs e)
         {
-            _garage.OccupySpot(0, 2, new VehicleData("1A1-1111", "Karel"));
-            _garage.OccupySpot(0, 5, new VehicleData("2B2-2222", "Jana"));
-            _garage.OccupySpot(0, 6, new VehicleData("3C3-3333", "Petr")); 
-            _garage.OccupySpot(0, 7, new VehicleData("4D4-4444", "Eva"));  
-            _garage.OccupySpot(0, 10, new VehicleData("5E5-5555", "Tomáš"));
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = "Vyberte soubor s testovacími daty",
+                Filter = "Textové soubory (*.txt;*.csv)|*.txt;*.csv|Všechny soubory (*.*)|*.*"
+            };
 
-            LogMessage("INFO: Testovací data úspěšně načtena.");
-            RefreshOccupiedList();
-            UpdateTreeVisualization();
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    string[] lines = File.ReadAllLines(openFileDialog.FileName);
+                    int loadedCount = 0;
+
+                    foreach (string line in lines)
+                    {
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+
+                        string[] parts = line.Split(';');
+
+                        if (parts.Length == 4)
+                        {
+                            if (int.TryParse(parts[0], out int floor) && int.TryParse(parts[1], out int spot))
+                            {
+                                var data = new VehicleData(parts[2], parts[3]);
+
+                                if (_garage.OccupySpot(floor, spot, data))
+                                {
+                                    loadedCount++;
+                                }
+                            }
+                        }
+                    }
+
+                    LogMessage($"INFO: Úspěšně načteno {loadedCount} záznamů ze souboru.");
+                    RefreshOccupiedList();
+                    UpdateTreeVisualization();
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"CHYBA při čtení souboru: {ex.Message}");
+                }
+            }
         }
         private void UpdateTreeVisualization()
         {
@@ -183,11 +221,9 @@ namespace Treap
 
             if (root != null)
             {
-                double startX = CanvasTree.ActualWidth / 2;
-                if (startX == 0) startX = 350; 
-
+                double startX = 500;
                 double startY = 40;
-                double initialHorizontalGap = startX / 1.5; 
+                double initialHorizontalGap = 250;
 
                 DrawNode(root, startX, startY, initialHorizontalGap);
             }
@@ -195,8 +231,8 @@ namespace Treap
 
         private void DrawNode(TreapNode<int, VehicleData> node, double x, double y, double horizontalGap)
         {
-            double verticalGap = 70; 
-            double nodeRadius = 25;  
+            double verticalGap = 60;
+            double nodeRadius = 20;
 
             if (node.Left != null)
             {
@@ -230,7 +266,7 @@ namespace Treap
             {
                 Text = $"{node.Key}\n({node.Priority})",
                 TextAlignment = TextAlignment.Center,
-                FontSize = 11,
+                FontSize = 10,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.Black
             };
@@ -252,6 +288,40 @@ namespace Treap
                 StrokeThickness = 2
             };
             CanvasTree.Children.Add(line);
+        }
+        private void BtnSaveFile_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                Title = "Uložit testovací data",
+                Filter = "Textové soubory (*.txt)|*.txt|CSV soubory (*.csv)|*.csv|Všechny soubory (*.*)|*.*",
+                DefaultExt = ".txt"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    List<string> linesToSave = new List<string>();
+
+                    for (int floorIndex = 0; floorIndex < _garage.FloorsCount; floorIndex++)
+                    {
+                        var spots = _garage.GetOccupiedSpots(floorIndex);
+
+                        foreach (var spot in spots)
+                        {
+                            linesToSave.Add($"{floorIndex};{spot.Key};{spot.Value.LicensePlate};{spot.Value.OwnerName}");
+                        }
+                    }
+
+                    File.WriteAllLines(saveFileDialog.FileName, linesToSave);
+                    LogMessage($"INFO: Úspěšně uloženo {linesToSave.Count} záznamů do souboru.");
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"CHYBA při ukládání souboru: {ex.Message}");
+                }
+            }
         }
     }
 }

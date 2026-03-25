@@ -10,16 +10,25 @@ namespace Treap
     {
         private TreapNode<TKey, TValue>? _root;
         private readonly Random _random;
+        private readonly HashSet<int> _usedPriorities;
 
         public Treap()
         {
             _root = null;
             _random = new Random();
+            _usedPriorities = new HashSet<int>();
         }
 
         protected int GeneratePriority()
         {
-            return _random.Next();
+            int priority;
+            do
+            {
+                priority = _random.Next();
+            }
+            while (!_usedPriorities.Add(priority));
+
+            return priority;
         }
 
         private TreapNode<TKey, TValue> RotateRight(TreapNode<TKey, TValue> y)
