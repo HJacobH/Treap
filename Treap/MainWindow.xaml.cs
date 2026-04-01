@@ -25,7 +25,13 @@ namespace Treap
             InitializeComponent();
             _garage = new ParkingGarage();
 
-            CmbFloors.SelectionChanged += (s, e) => RefreshOccupiedList();
+            CmbFloors.SelectionChanged += (s, e) =>
+            {
+                RefreshOccupiedList();
+                UpdateTreeVisualization();
+            };
+
+            this.SizeChanged += (s, e) => UpdateTreeVisualization();
         }
         private void LogMessage(string message)
         {
@@ -40,17 +46,26 @@ namespace Treap
 
         private void RefreshOccupiedList()
         {
-            if (LstOccupiedSpots == null) return; 
+            if (LstOccupiedSpots == null) return;
 
             int floor = GetSelectedFloor();
-            var spots = _garage.GetOccupiedSpots(floor);
+            var treap = _garage.GetFloorTreap(floor);
+            int totalSpots = _garage.SpotsPerFloor; 
 
             LstOccupiedSpots.Items.Clear();
-            foreach (var spot in spots)
+
+            for (int spotNumber = 1; spotNumber <= totalSpots; spotNumber++)
             {
-                LstOccupiedSpots.Items.Add($"Místo {spot.Key} - {spot.Value}");
+                if (_garage.IsSpotOccupied(floor, spotNumber))
+                {
+                    var vehicleData = treap.GetValue(spotNumber);
+                    LstOccupiedSpots.Items.Add($"Místo {spotNumber:D2}: OBSAZENO -> {vehicleData}");
+                }
+                else
+                {
+                    LstOccupiedSpots.Items.Add($"Místo {spotNumber:D2}: [ VOLNÉ ]");
+                }
             }
-            UpdateTreeVisualization();
         }
 
         private void BtnOccupy_Click(object sender, RoutedEventArgs e)
@@ -322,6 +337,28 @@ namespace Treap
                     LogMessage($"CHYBA při ukládání souboru: {ex.Message}");
                 }
             }
+        }
+        private void BtnPrint_Click(object sender, RoutedEventArgs e)
+        {
+            int floor = GetSelectedFloor();
+            var treap = _garage.GetFloorTreap(floor);
+            int totalSpots = _garage.SpotsPerFloor;
+
+            LogMessage($"\n--- STAV PARKOVÁNÍ (Podlaží {floor + 1}) ---");
+
+            for (int spotNumber = 1; spotNumber <= totalSpots; spotNumber++)
+            {
+                if (_garage.IsSpotOccupied(floor, spotNumber))
+                {
+                    var vehicleData = treap.GetValue(spotNumber);
+                    LogMessage($"Místo č. {spotNumber:D2} -> {vehicleData}");
+                }
+                else
+                {
+                    LogMessage($"Místo č. {spotNumber:D2} -> VOLNÉ");
+                }
+            }
+            LogMessage("--------------------------------------------------");
         }
     }
 }

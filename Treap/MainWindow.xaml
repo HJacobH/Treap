@@ -37,6 +37,7 @@
             <Button x:Name="BtnFree" Content="Uvolnit místo" Margin="0,0,0,5" Padding="5" Click="BtnFree_Click"/>
             <Button x:Name="BtnCheck" Content="Zkontrolovat obsazenost" Margin="0,0,0,5" Padding="5" Click="BtnCheck_Click"/>
             <Button x:Name="BtnNearest" Content="Najít nejbližší volné" Margin="0,0,0,15" Padding="5" Click="BtnNearest_Click"/>
+            <Button x:Name="BtnPrint" Content="Vypsat všechna místa do logu" Margin="0,0,0,15" Padding="5" Click="BtnPrint_Click"/>
             
             <Separator Margin="0,10"/>
 
@@ -47,18 +48,31 @@
         <Grid Grid.Column="1" Margin="10,0,10,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="150"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0">
-                <TextBlock Text="Obsazená místa (vzestupně):" FontWeight="Bold" Margin="0,0,0,5"/>
-                <ListBox x:Name="LstOccupiedSpots" Height="350"/>
-            </StackPanel>
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="1" Margin="0,10,0,0">
-                <TextBlock Text="Výstup / Log:" FontWeight="Bold" Margin="0,0,0,5"/>
-                <TextBox x:Name="TxtLog" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="110"/>
-            </StackPanel>
+                <TextBlock Grid.Row="0" Text="Stav parkovacích míst na podlaží:" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                <ListBox Grid.Row="1" x:Name="LstOccupiedSpots" 
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto" 
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="0,0,0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="120"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Výstup / Log:" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBox Grid.Row="1" x:Name="TxtLog" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+            </Grid>
         </Grid>
 
         <GroupBox Grid.Column="2" Header="Vizualizace Treapu (Rotace)">
