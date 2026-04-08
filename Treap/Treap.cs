@@ -118,18 +118,26 @@ namespace Treap
         public List<TreapNode<TKey, TValue>> GetElementsInOrder()
         {
             var result = new List<TreapNode<TKey, TValue>>();
-            InOrderTraversal(_root, result);
-            return result;
-        }
 
-        private void InOrderTraversal(TreapNode<TKey, TValue>? node, List<TreapNode<TKey, TValue>> result)
-        {
-            if (node != null)
+            var stack = new Stack<TreapNode<TKey, TValue>>();
+            var current = _root;
+
+            while (current != null || stack.Count > 0)
             {
-                InOrderTraversal(node.Left, result);  
-                result.Add(node);                    
-                InOrderTraversal(node.Right, result); 
+                while (current != null)
+                {
+                    stack.Push(current);
+                    current = current.Left;
+                }
+
+                current = stack.Pop();
+
+                result.Add(current);
+
+                current = current.Right;
             }
+
+            return result;
         }
 
         public TreapNode<TKey, TValue>? Root => _root;
